@@ -20,11 +20,15 @@ import androidx.core.app.ServiceCompat
  * T8 — Foreground service qui poll l'app au premier plan.
  * Utilise UsageStatsManager (INTERVAL_DAILY sur une fenêtre récente) pour obtenir
  * le package le plus récemment utilisé = app au premier plan.
+ * Reçoit la liste des apps ciblées (targetApps) au démarrage ; notifie Flutter
+ * uniquement quand une app ciblée passe au premier plan.
  */
 class AppMonitorService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var pollingRunnable: Runnable? = null
+    private var targetPackages: Set<String> = emptySet()
+    private var lastForegroundPackage: String? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -34,6 +38,7 @@ class AppMonitorService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        targetPackages = intent?.getStringArrayListExtra(EXTRA_TARGET_PACKAGES)?.toSet().orEmpty()
         val notification = buildNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             ServiceCompat.startForeground(
@@ -92,14 +97,21 @@ class AppMonitorService : Service() {
         if (pollingRunnable != null) return
         pollingRunnable = object : Runnable {
             override fun run() {
-                getForegroundPackage()?.let { pkg ->
-                    // T9 utilisera ce package pour notifier Flutter (appOpened).
-                    // Pour T8 on se contente de poller; le stockage/callback sera ajouté en T9.
+                val pkg = getForegroundPackage()
+                if (pkg != null && targetPackages.contains(pkg) && pkg != lastForegroundPackage) {
+                    lastForegroundPackage = pkg
+                    notifyAppOpened(pkg)
+                } else if (pkg != null && !targetPackages.contains(pkg)) {
+                    lastForegroundPackage = pkg
                 }
                 handler.postDelayed(this, POLL_INTERVAL_MS)
             }
         }
         handler.post(pollingRunnable!!)
+    }
+
+    private fun notifyAppOpened(packageName: String) {
+        MainActivity.deliverAppOpened(this, packageName)
     }
 
     private fun stopPolling() {
@@ -123,13 +135,16 @@ class AppMonitorService : Service() {
     }
 
     companion object {
+        const val EXTRA_TARGET_PACKAGES = "target_packages"
         private const val CHANNEL_ID = "pause_monitor"
         private const val NOTIFICATION_ID = 1
         private const val POLL_INTERVAL_MS = 1000L
         private const val WINDOW_MS = 30_000L
 
-        fun start(context: Context) {
-            val intent = Intent(context, AppMonitorService::class.java)
+        fun start(context: Context, targetPackages: List<String>) {
+            val intent = Intent(context, AppMonitorService::class.java).apply {
+                putStringArrayListExtra(EXTRA_TARGET_PACKAGES, ArrayList(targetPackages))
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
             } else {

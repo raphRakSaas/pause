@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/providers/settings_provider.dart';
+import '../../../shared/services/monitor_service.dart';
 import '../../../shared/services/permission_service.dart';
 
 /// T7 — Écran permissions : guide Usage Access + Overlay, boutons réglages, vérification état.
@@ -134,7 +136,14 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: () => context.go('/'),
+              onPressed: bothOk
+                  ? () async {
+                      final settings = ref.read(settingsProvider).valueOrNull;
+                      final targetApps = settings?.targetApps ?? [];
+                      await startMonitorService(targetApps);
+                      if (mounted) context.go('/');
+                    }
+                  : null,
               child: const Text('Terminer'),
             ),
           ] else ...[
