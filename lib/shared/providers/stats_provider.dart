@@ -27,16 +27,28 @@ class DashboardStats {
   final int streak;
   final int dailyLimitMinutes;
 
+  /// Calcul déterministe pour les tests (optionnel [now]). Sinon utilise DateTime.now().
+  static DashboardStats compute(
+    List<Event> events,
+    List<MicroActionLog> logs,
+    int dailyLimitMinutes, [
+    DateTime? now,
+  ]) {
+    return _compute(events, logs, dailyLimitMinutes, now ?? DateTime.now());
+  }
+
   static DashboardStats _compute(
     List<Event> events,
     List<MicroActionLog> logs,
     int dailyLimitMinutes,
+    DateTime now,
   ) {
-    final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
-
-    final eventsToday =
-        events.where((e) => e.timestamp.isAfter(todayStart)).toList();
+    final todayEnd = todayStart.add(const Duration(days: 1));
+    final eventsToday = events
+        .where((e) =>
+            !e.timestamp.isBefore(todayStart) && e.timestamp.isBefore(todayEnd))
+        .toList();
     final minutesToday = eventsToday
         .where((e) => e.decision == EventDecision.sessionShort)
         .fold<int>(
@@ -84,8 +96,12 @@ class Stats7 {
   final Map<EventReason, int> topReasons;
   final Map<int, int> peakHours;
 
-  static Stats7 _compute(List<Event> events) {
-    final now = DateTime.now();
+  /// Calcul déterministe pour les tests (optionnel [now]).
+  static Stats7 compute(List<Event> events, [DateTime? now]) {
+    return _compute(events, now ?? DateTime.now());
+  }
+
+  static Stats7 _compute(List<Event> events, DateTime now) {
     final days = List.generate(7, (i) {
       final d = now.subtract(Duration(days: 6 - i));
       return DateTime(d.year, d.month, d.day);
@@ -179,7 +195,7 @@ final dashboardStatsProvider = Provider<AsyncValue<DashboardStats>>((ref) {
 
   return eventsAsync.when(
     data: (events) => logsAsync.when(
-      data: (logs) => AsyncValue.data(DashboardStats._compute(
+      data: (logs) => AsyncValue.data(DashboardStats.compute(
         events,
         logs,
         settings.dailyLimitMinutes,
@@ -196,7 +212,7 @@ final dashboardStatsProvider = Provider<AsyncValue<DashboardStats>>((ref) {
 final stats7Provider = Provider<AsyncValue<Stats7>>((ref) {
   final eventsAsync = ref.watch(eventsListProvider);
   return eventsAsync.when(
-    data: (events) => AsyncValue.data(Stats7._compute(events)),
+    data: (events) => AsyncValue.data(Stats7.compute(events)),
     loading: () => const AsyncValue.loading(),
     error: (e, st) => AsyncValue.error(e, st),
   );

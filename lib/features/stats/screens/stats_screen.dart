@@ -28,10 +28,36 @@ class StatsScreen extends ConsumerWidget {
         data: (s) => _Body(stats: s, theme: theme, reasonLabels: _reasonLabels),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-          child: Text(
-            'Erreur: $e',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.error,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: theme.colorScheme.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Impossible de charger les statistiques',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  e.toString(),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
         ),
@@ -56,6 +82,10 @@ class _Body extends StatelessWidget {
     return weekdays[day.weekday - 1];
   }
 
+  bool get _hasNoData =>
+      stats.minutesPerDay.every((e) => e.minutes == 0) &&
+      stats.topReasons.values.every((v) => v == 0);
+
   @override
   Widget build(BuildContext context) {
     final maxMinutes = stats.minutesPerDay.isEmpty
@@ -65,6 +95,32 @@ class _Body extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
+        if (_hasNoData) ...[
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.bar_chart_outlined,
+                    size: 40,
+                    color: theme.colorScheme.primary.withOpacity(0.7),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      'Aucune activité sur les 7 derniers jours. Les stats s\'afficheront ici après tes premières pauses.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
         Text(
           'Tendance 7 jours (minutes)',
           style: theme.textTheme.titleMedium?.copyWith(

@@ -130,10 +130,20 @@ class _AppOpenedListenerState extends ConsumerState<_AppOpenedListener> {
     super.didChangeDependencies();
     if (_sub == null) {
       final router = ref.read(goRouterProvider);
-      _sub = appOpenedStream.listen((pkg) async {
-        if (!mounted) return;
-        router.push('${AppRoutes.overlayFriction}?package=${Uri.encodeComponent(pkg)}');
-      });
+      _sub = appOpenedStream.listen(
+        (pkg) async {
+          if (!mounted) return;
+          router.push('${AppRoutes.overlayFriction}?package=${Uri.encodeComponent(pkg)}');
+        },
+        onError: (Object e, StackTrace st) {
+          // Permission retirée ou erreur plateforme : ne pas crasher (TESTPLAN cas limites).
+          assert(() {
+            // ignore: avoid_print
+            debugPrint('appOpenedStream error: $e\n$st');
+            return true;
+          }());
+        },
+      );
     }
   }
 

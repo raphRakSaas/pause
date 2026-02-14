@@ -1,30 +1,37 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Smoke test Home (Dashboard) — Sprint 5 T19.
+// Voir dashboard_screen_test.dart pour les tests détaillés.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:pause/main.dart';
+import 'package:pause/app/theme.dart';
+import 'package:pause/features/dashboard/screens/dashboard_screen.dart';
+import 'package:pause/shared/providers/stats_provider.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Home (Dashboard) s\'affiche avec des stats mockées', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          dashboardStatsProvider.overrideWith((ref) => const AsyncValue.data(
+            DashboardStats(
+              minutesToday: 0,
+              opensToday: 0,
+              progress: 0.0,
+              streak: 0,
+              dailyLimitMinutes: 120,
+            ),
+          )),
+        ],
+        child: MaterialApp(
+          theme: PauseTheme.light,
+          home: const DashboardScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Aujourd\'hui'), findsOneWidget);
+    expect(find.text('Série'), findsOneWidget);
   });
 }
