@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_name">Pause en cours</string>
+    <string name="notification_channel_description">Pause surveille les apps pour afficher une pause.</string>
+    <string name="notification_title">Pause</string>
+    <string name="notification_text">Surveillance des apps activée</string>
+</resources>
