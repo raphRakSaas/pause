@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,7 +23,7 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addWidgetsBindingObserver(this);
+    WidgetsBinding.instance.addObserver(this);
     _check();
   }
 
@@ -106,6 +107,8 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
             loading: _loading,
             onOpenSettings: () => openOverlaySettings(),
             onVerify: _check,
+            overlayHelp: true,
+            onOpenAppDetails: () => openAppDetailSettings(),
           ),
           const SizedBox(height: 32),
           if (bothOk) ...[
@@ -134,11 +137,58 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
               onPressed: () => context.go('/'),
               child: const Text('Terminer'),
             ),
-          ] else
+          ] else ...[
+            if (kDebugMode && _usageOk && !_overlayOk) ...[
+              Card(
+                color: theme.colorScheme.surfaceContainerHighest,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.bug_report, size: 20, color: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Mode debug',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'En debug, l\'app peut ne pas apparaître dans « Vue premier plan ». Tu peux accorder la permission via ADB (appareil connecté en USB) :',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SelectableText(
+                        'adb shell appops set com.pause.pause SYSTEM_ALERT_WINDOW allow',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontFamily: 'monospace',
+                          backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () => context.go('/'),
+                        child: const Text('Continuer sans overlay (pour tester)'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             OutlinedButton(
               onPressed: _loading ? null : _check,
               child: Text(_loading ? 'Vérification…' : 'Vérifier les permissions'),
             ),
+          ],
         ],
       ),
     );
@@ -153,6 +203,8 @@ class _PermissionCard extends StatelessWidget {
     required this.loading,
     required this.onOpenSettings,
     required this.onVerify,
+    this.overlayHelp = false,
+    this.onOpenAppDetails,
   });
 
   final String title;
@@ -161,6 +213,8 @@ class _PermissionCard extends StatelessWidget {
   final bool loading;
   final VoidCallback onOpenSettings;
   final VoidCallback onVerify;
+  final bool overlayHelp;
+  final VoidCallback? onOpenAppDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -212,6 +266,22 @@ class _PermissionCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (overlayHelp && onOpenAppDetails != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Si Pause n\'apparaît pas dans la liste « Vue premier plan », ouvre la fiche de l\'app et active « Afficher par-dessus les autres apps ».',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: loading ? null : onOpenAppDetails,
+                icon: const Icon(Icons.settings_applications, size: 18),
+                label: const Text('Ouvrir la fiche de l\'app Pause'),
+              ),
+            ],
           ],
         ),
       ),

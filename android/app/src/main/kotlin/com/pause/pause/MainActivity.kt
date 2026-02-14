@@ -33,6 +33,13 @@ class MainActivity : FlutterActivity() {
                     startActivity(intent)
                     result.success(null)
                 }
+                "openAppDetailSettings" -> {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", packageName, null)
+                    }
+                    startActivity(intent)
+                    result.success(null)
+                }
                 "hasUsageAccess" -> result.success(hasUsageAccess(this))
                 "canDrawOverlays" -> result.success(canDrawOverlays(this))
                 "startMonitorService" -> {

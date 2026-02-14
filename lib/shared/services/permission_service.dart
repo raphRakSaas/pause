@@ -13,6 +13,13 @@ Future<void> openOverlaySettings() async {
   await _channel.invokeMethod<void>('openOverlaySettings');
 }
 
+/// Ouvre la fiche Paramètres de l'app (Applications > Pause).
+/// Depuis là, l'utilisateur peut activer « Afficher par-dessus les autres apps »
+/// si l'app n'apparaît pas dans la liste « Vue premier plan ».
+Future<void> openAppDetailSettings() async {
+  await _channel.invokeMethod<void>('openAppDetailSettings');
+}
+
 /// Indique si l'app a l'accès aux statistiques d'utilisation (PACKAGE_USAGE_STATS).
 Future<bool> hasUsageAccess() async {
   final result = await _channel.invokeMethod<bool>('hasUsageAccess');
