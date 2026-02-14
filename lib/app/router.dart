@@ -8,9 +8,10 @@ import '../features/onboarding/screens/apps_selection_screen.dart';
 import '../features/onboarding/screens/friction_level_screen.dart';
 import '../features/onboarding/screens/objective_screen.dart';
 import '../features/onboarding/screens/permissions_screen.dart';
+import '../features/micro_actions/screens/micro_action_run_screen.dart';
 import '../features/overlay_friction/screens/overlay_friction_screen.dart';
+import '../features/overlay_friction/screens/session_timer_screen.dart';
 import '../shared/services/monitor_service.dart';
-import '../shared/storage/storage_service.dart';
 
 /// Route names (single source of truth).
 abstract final class AppRoutes {
@@ -21,6 +22,8 @@ abstract final class AppRoutes {
   static const String onboardingFriction = '/onboarding/friction';
   static const String onboardingPermissions = '/onboarding/permissions';
   static const String overlayFriction = '/overlay-friction';
+  static const String sessionTimer = '/session-timer';
+  static const String microAction = '/micro-action';
 }
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -65,6 +68,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               return OverlayFrictionScreen(packageName: pkg);
             },
           ),
+          GoRoute(
+            path: AppRoutes.sessionTimer,
+            builder: (context, state) {
+              final eventId =
+                  state.uri.queryParameters['eventId'] ?? '';
+              return SessionTimerScreen(eventId: eventId);
+            },
+          ),
+          GoRoute(
+            path: AppRoutes.microAction,
+            builder: (context, state) => const MicroActionRunScreen(),
+          ),
         ],
       ),
     ],
@@ -90,7 +105,6 @@ class _AppOpenedListenerState extends ConsumerState<_AppOpenedListener> {
     if (_sub == null) {
       final router = ref.read(goRouterProvider);
       _sub = appOpenedStream.listen((pkg) async {
-        await addEvent(packageName: pkg);
         if (!mounted) return;
         router.push('${AppRoutes.overlayFriction}?package=${Uri.encodeComponent(pkg)}');
       });

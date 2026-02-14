@@ -38,16 +38,17 @@ Future<void> initStorage() async {
   }
 }
 
-/// Enregistre un événement d'ouverture d'app (T11). Utilise reason/decision par défaut tant que l'utilisateur n'a pas choisi.
-Future<void> addEvent({
+/// Enregistre un événement d'ouverture d'app (T11). Retourne l'id de l'event pour mise à jour session (T13).
+Future<String> addEvent({
   required String packageName,
-  EventReason reason = EventReason.other,
-  EventDecision decision = EventDecision.bypass,
+  required EventReason reason,
+  required EventDecision decision,
   int? sessionDurationSec,
 }) async {
   final box = Hive.box<Event>(BoxNames.events);
+  final id = _uuid.v4();
   final event = Event(
-    id: _uuid.v4(),
+    id: id,
     timestamp: DateTime.now(),
     packageName: packageName,
     decision: decision,
@@ -55,4 +56,28 @@ Future<void> addEvent({
     sessionDurationSec: sessionDurationSec,
   );
   await box.put(event.id, event);
+  return id;
+}
+
+/// Met à jour la durée effective d'une session (T13).
+Future<void> updateEventSessionDuration(String eventId, int durationSec) async {
+  final box = Hive.box<Event>(BoxNames.events);
+  final event = box.get(eventId);
+  if (event == null) return;
+  await box.put(eventId, event.copyWith(sessionDurationSec: durationSec));
+}
+
+/// Enregistre une micro-action effectuée (T14).
+Future<void> addMicroActionLog({
+  required String actionId,
+  required int durationSec,
+}) async {
+  final box = Hive.box<MicroActionLog>(BoxNames.microActionLogs);
+  final log = MicroActionLog(
+    id: _uuid.v4(),
+    timestamp: DateTime.now(),
+    actionId: actionId,
+    durationSec: durationSec,
+  );
+  await box.put(log.id, log);
 }
