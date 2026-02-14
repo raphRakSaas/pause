@@ -81,3 +81,15 @@ Future<void> addMicroActionLog({
   );
   await box.put(log.id, log);
 }
+
+/// Retourne tous les événements (pour dashboard/stats). Les clés sont des id, pas des dates.
+List<Event> getAllEvents() {
+  final box = Hive.box<Event>(BoxNames.events);
+  return box.values.toList();
+}
+
+/// Retourne tous les logs de micro-actions (pour stats).
+List<MicroActionLog> getAllMicroActionLogs() {
+  final box = Hive.box<MicroActionLog>(BoxNames.microActionLogs);
+  return box.values.toList();
+}

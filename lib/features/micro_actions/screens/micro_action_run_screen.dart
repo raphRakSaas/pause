@@ -2,21 +2,24 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/models/micro_action.dart';
+import '../../../shared/providers/settings_provider.dart';
 import '../../../shared/storage/storage_service.dart';
 
 /// T14 — Affiche une micro-action, bouton Démarrer (timer optionnel), Terminé -> log + fermer overlay.
-class MicroActionRunScreen extends StatefulWidget {
+/// Ne propose que les micro-actions activées dans les paramètres (T17).
+class MicroActionRunScreen extends ConsumerStatefulWidget {
   const MicroActionRunScreen({super.key});
 
   @override
-  State<MicroActionRunScreen> createState() => _MicroActionRunScreenState();
+  ConsumerState<MicroActionRunScreen> createState() => _MicroActionRunScreenState();
 }
 
-class _MicroActionRunScreenState extends State<MicroActionRunScreen> {
-  late final MicroActionDef _action;
+class _MicroActionRunScreenState extends ConsumerState<MicroActionRunScreen> {
+  MicroActionDef? _action;
   bool _started = false;
   int _elapsedSec = 0;
   Timer? _timer;
@@ -24,8 +27,6 @@ class _MicroActionRunScreenState extends State<MicroActionRunScreen> {
   @override
   void initState() {
     super.initState();
-    final rnd = Random();
-    _action = microActionDefs[rnd.nextInt(microActionDefs.length)];
   }
 
   @override
@@ -42,10 +43,12 @@ class _MicroActionRunScreenState extends State<MicroActionRunScreen> {
   }
 
   Future<void> _onDone() async {
+    final action = _action;
+    if (action == null) return;
     _timer?.cancel();
     await addMicroActionLog(
-      actionId: _action.id,
-      durationSec: _elapsedSec > 0 ? _elapsedSec : _action.durationSec,
+      actionId: action.id,
+      durationSec: _elapsedSec > 0 ? _elapsedSec : action.durationSec,
     );
     if (!mounted) return;
     context.pop();
@@ -55,6 +58,24 @@ class _MicroActionRunScreenState extends State<MicroActionRunScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final enabled = ref.watch(enabledMicroActionDefsProvider);
+    _action ??= enabled.isNotEmpty
+        ? enabled[Random().nextInt(enabled.length)]
+        : microActionDefs.isNotEmpty
+            ? microActionDefs.first
+            : null;
+
+    final action = _action;
+    if (action == null) {
+      return Scaffold(
+        body: Center(
+          child: Text(
+            'Aucune micro-action configurée.',
+            style: theme.textTheme.bodyLarge,
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -70,7 +91,7 @@ class _MicroActionRunScreenState extends State<MicroActionRunScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                _action.label,
+                action.label,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),

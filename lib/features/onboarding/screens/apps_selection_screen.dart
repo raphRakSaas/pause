@@ -7,8 +7,11 @@ import '../../../shared/models/settings.dart';
 import '../../../shared/providers/settings_provider.dart';
 
 /// T4 — Écran sélection des apps (liste preset + toggles). Persisté dans Settings.
+/// [fromSettings] : si true, bouton "Retour" et pop au lieu de continuer l'onboarding (T17).
 class AppsSelectionScreen extends ConsumerWidget {
-  const AppsSelectionScreen({super.key});
+  const AppsSelectionScreen({super.key, this.fromSettings = false});
+
+  final bool fromSettings;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -52,8 +55,14 @@ class AppsSelectionScreen extends ConsumerWidget {
           }),
           const SizedBox(height: 24),
           FilledButton(
-            onPressed: () => context.push('/onboarding/objectif'),
-            child: const Text('Continuer'),
+            onPressed: () {
+              if (fromSettings) {
+                context.pop();
+              } else {
+                context.push('/onboarding/objectif');
+              }
+            },
+            child: Text(fromSettings ? 'Retour' : 'Continuer'),
           ),
         ],
       ),

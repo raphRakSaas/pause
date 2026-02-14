@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../shared/models/settings.dart';
 import '../../../shared/providers/settings_provider.dart';
 
 /// T5 — Objectif minutes/jour + option "pas de scroll après HH:MM".
+/// [fromSettings] : si true, bouton "Enregistrer" et pop (T17).
 class ObjectiveScreen extends ConsumerStatefulWidget {
-  const ObjectiveScreen({super.key});
+  const ObjectiveScreen({super.key, this.fromSettings = false});
+
+  final bool fromSettings;
 
   @override
   ConsumerState<ObjectiveScreen> createState() => _ObjectiveScreenState();
@@ -111,9 +113,13 @@ class _ObjectiveScreenState extends ConsumerState<ObjectiveScreen> {
           FilledButton(
             onPressed: () {
               _persist();
-              context.push('/onboarding/friction');
+              if (widget.fromSettings) {
+                context.pop();
+              } else {
+                context.push('/onboarding/friction');
+              }
             },
-            child: const Text('Continuer'),
+            child: Text(widget.fromSettings ? 'Enregistrer' : 'Continuer'),
           ),
         ],
       ),

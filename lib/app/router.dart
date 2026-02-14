@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/dashboard/screens/dashboard_screen.dart';
 import '../features/onboarding/screens/apps_selection_screen.dart';
 import '../features/onboarding/screens/friction_level_screen.dart';
 import '../features/onboarding/screens/objective_screen.dart';
@@ -11,11 +12,15 @@ import '../features/onboarding/screens/permissions_screen.dart';
 import '../features/micro_actions/screens/micro_action_run_screen.dart';
 import '../features/overlay_friction/screens/overlay_friction_screen.dart';
 import '../features/overlay_friction/screens/session_timer_screen.dart';
+import '../features/settings/screens/settings_screen.dart';
+import '../features/stats/screens/stats_screen.dart';
 import '../shared/services/monitor_service.dart';
 
 /// Route names (single source of truth).
 abstract final class AppRoutes {
   static const String home = '/';
+  static const String stats = '/stats';
+  static const String settings = '/settings';
   static const String onboarding = '/onboarding';
   static const String onboardingApps = '/onboarding/apps';
   static const String onboardingObjectif = '/onboarding/objectif';
@@ -34,12 +39,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.home,
     routes: [
       ShellRoute(
-        builder: (context, state, child) =>
-            _AppOpenedListener(child: child),
+        builder: (context, state, child) => _AppOpenedListener(
+          child: _MainShell(path: state.uri.path, child: child),
+        ),
         routes: [
           GoRoute(
             path: AppRoutes.home,
-            builder: (context, state) => const _PlaceholderHome(),
+            builder: (context, state) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.stats,
+            builder: (context, state) => const StatsScreen(),
+          ),
+          GoRoute(
+            path: AppRoutes.settings,
+            builder: (context, state) => const SettingsScreen(),
           ),
           GoRoute(
             path: AppRoutes.onboarding,
@@ -47,15 +61,27 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutes.onboardingApps,
-            builder: (context, state) => const AppsSelectionScreen(),
+            builder: (context, state) {
+              final fromSettings =
+                  state.uri.queryParameters['fromSettings'] == '1';
+              return AppsSelectionScreen(fromSettings: fromSettings);
+            },
           ),
           GoRoute(
             path: AppRoutes.onboardingObjectif,
-            builder: (context, state) => const ObjectiveScreen(),
+            builder: (context, state) {
+              final fromSettings =
+                  state.uri.queryParameters['fromSettings'] == '1';
+              return ObjectiveScreen(fromSettings: fromSettings);
+            },
           ),
           GoRoute(
             path: AppRoutes.onboardingFriction,
-            builder: (context, state) => const FrictionLevelScreen(),
+            builder: (context, state) {
+              final fromSettings =
+                  state.uri.queryParameters['fromSettings'] == '1';
+              return FrictionLevelScreen(fromSettings: fromSettings);
+            },
           ),
           GoRoute(
             path: AppRoutes.onboardingPermissions,
@@ -121,27 +147,52 @@ class _AppOpenedListenerState extends ConsumerState<_AppOpenedListener> {
   Widget build(BuildContext context) => widget.child;
 }
 
-class _PlaceholderHome extends StatelessWidget {
-  const _PlaceholderHome();
+/// Affiche la barre d'onglets (Home | Stats | Profil) uniquement sur les routes principales.
+class _MainShell extends StatelessWidget {
+  const _MainShell({required this.path, required this.child});
+
+  final String path;
+  final Widget child;
+
+  static const _mainPaths = [AppRoutes.home, AppRoutes.stats, AppRoutes.settings];
+
+  int get _selectedIndex {
+    final i = _mainPaths.indexOf(path);
+    return i >= 0 ? i : 0;
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (!_mainPaths.contains(path)) {
+      return child;
+    }
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Pause',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => context.go(AppRoutes.onboarding),
-              child: const Text('Onboarding'),
-            ),
-          ],
-        ),
+      body: child,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) {
+          final loc = _mainPaths[index];
+          if (loc != path) {
+            context.go(loc);
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Accueil',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart),
+            label: 'Stats',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profil',
+          ),
+        ],
       ),
     );
   }

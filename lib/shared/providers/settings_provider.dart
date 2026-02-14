@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/friction_level.dart';
+import '../models/micro_action.dart';
 import '../models/settings.dart';
 import '../storage/storage_service.dart';
 
@@ -52,4 +53,24 @@ class SettingsNotifier extends StateNotifier<AsyncValue<Settings>> {
   Future<void> setFrictionLevel(FrictionLevel level) async {
     await update((s) => s.copyWith(frictionLevel: level));
   }
+
+  /// T17 — Active/désactive une micro-action par id.
+  Future<void> setMicroActionEnabled(String actionId, bool enabled) async {
+    final current = _current.disabledMicroActionIds.toSet();
+    if (enabled) {
+      current.remove(actionId);
+    } else {
+      current.add(actionId);
+    }
+    await update((s) => s.copyWith(disabledMicroActionIds: current.toList()));
+  }
 }
+
+/// Liste des micro-actions activées (pour T14 run : ne proposer que celles-ci).
+/// Si toutes sont désactivées, on renvoie toutes les defs pour éviter un écran vide.
+final enabledMicroActionDefsProvider = Provider<List<MicroActionDef>>((ref) {
+  final settings = ref.watch(settingsProvider).valueOrNull ?? const Settings();
+  final disabled = settings.disabledMicroActionIds.toSet();
+  final enabled = microActionDefs.where((d) => !disabled.contains(d.id)).toList();
+  return enabled.isEmpty ? microActionDefs : enabled;
+});

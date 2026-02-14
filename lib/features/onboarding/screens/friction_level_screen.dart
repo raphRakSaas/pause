@@ -7,8 +7,11 @@ import '../../../shared/models/settings.dart';
 import '../../../shared/providers/settings_provider.dart';
 
 /// T6 — Niveau de friction : Soft / Medium / Hard (US-A4).
+/// [fromSettings] : si true, bouton "Enregistrer" et pop (T17).
 class FrictionLevelScreen extends ConsumerWidget {
-  const FrictionLevelScreen({super.key});
+  const FrictionLevelScreen({super.key, this.fromSettings = false});
+
+  final bool fromSettings;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -53,8 +56,14 @@ class FrictionLevelScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 32),
           FilledButton(
-            onPressed: () => context.push('/onboarding/permissions'),
-            child: const Text('Continuer'),
+            onPressed: () {
+              if (fromSettings) {
+                context.pop();
+              } else {
+                context.push('/onboarding/permissions');
+              }
+            },
+            child: Text(fromSettings ? 'Enregistrer' : 'Continuer'),
           ),
         ],
       ),
