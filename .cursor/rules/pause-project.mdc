@@ -1,0 +1,27 @@
+---
+description: Contexte et conventions du projet Pause (Flutter, docs, sprints)
+alwaysApply: true
+---
+
+# Projet Pause — Contexte pour les agents
+
+## Références obligatoires
+- **Produit et UX** : `docs/PRODUCT.md`, `docs/FLOWS.md`
+- **Architecture et stack** : `ARCHITECTURE.md`, `DECISIONS.md`
+- **Tâches par sprint** : `TACHES.md` (T0–T20)
+
+## Stack
+- Flutter (stable), Android-first MVP
+- Riverpod, go_router, thème type Apple
+- Stockage local : Isar ou Hive ; modèles Event, Settings, MicroActionLog
+- Android : Kotlin (foreground service, overlay), MethodChannel vers Flutter
+
+## Conventions code
+- Un feature = un dossier sous `lib/features/`
+- Modèles immutables, logs structurés en debug
+- Commits : `feat:`, `fix:`, `chore:`, `docs:`
+
+## Principes
+- MVP = pas de compte, pas de sync cloud
+- UX non punitive : toujours un choix (session 5 min ou micro-action)
+- Ne pas introduire de régression ; en cas de doute, proposer une solution alternative plutôt que modifier du code à risque
